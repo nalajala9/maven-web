@@ -15,6 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HelloServletTest {
@@ -28,11 +30,19 @@ public class HelloServletTest {
     @Mock
     private ServletContext servletContext;
 
+    @Mock
+    private ServletConfig servletConfig;
+
+    private HelloServlet helloServlet;
+
     @Before
     public void setUp() throws IOException {
         // Read the index.html file
         InputStream expectedStream = getClass().getClassLoader().getResourceAsStream("index.html");
-        Mockito.when(servletContext.getResourceAsStream("/index.html")).thenReturn(expectedStream);
+        when(servletContext.getResourceAsStream("/index.html")).thenReturn(expectedStream);
+        when(servletConfig.getServletContext()).thenReturn(servletContext);
+        helloServlet = new HelloServlet();
+        helloServlet.init(servletConfig);
     }
 
     @Test
@@ -40,15 +50,9 @@ public class HelloServletTest {
         // Capture the response output
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
-        Mockito.when(response.getWriter()).thenReturn(printWriter);
-
-        // Set up the ServletConfig
-        ServletConfig servletConfig = Mockito.mock(ServletConfig.class);
-        Mockito.when(servletConfig.getServletContext()).thenReturn(servletContext);
+        when(response.getWriter()).thenReturn(printWriter);
 
         // Execute the servlet code
-        HelloServlet helloServlet = new HelloServlet();
-        helloServlet.init(servletConfig); // Initialize the servlet with the ServletConfig
         helloServlet.doGet(request, response);
 
         // Flush and close the writer
@@ -74,7 +78,23 @@ public class HelloServletTest {
 
         // Assert that the normalized response output matches the normalized expected content
         assertEquals(normalizedExpectedContent, normalizedResponseOutput);
+
+        // Verify that the content type is set to text/html
+        verify(response).setContentType("text/html");
     }
 
+    @Test
+    public void testDoGetWhenHtmlFileNotFound() throws ServletException, IOException {
+        // Simulate a case where the HTML file is not found
+        when(servletContext.getResourceAsStream("/index.html")).thenReturn(null);
+
+        // Execute the servlet code
+        helloServlet.doGet(request, response);
+
+        // Verify that the response status is set to 404 (Not Found)
+        verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    // Add more test cases to cover different scenarios
 
 }
