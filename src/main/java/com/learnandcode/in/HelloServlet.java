@@ -25,7 +25,7 @@ public class HelloServlet extends HttpServlet {
                 writer.println(line);
             }
         } catch (IOException e) {
-            e.printStackTrace(); // Commented out to deactivate the debug feature
+            // e.printStackTrace(); // Commented out to deactivate the debug feature
             // Handle the exception in an appropriate way for your application
         }
     }
