@@ -6,7 +6,7 @@ LABEL maintainer="nalajalaravi99@gmail.com"
 RUN apk update && apk add --no-cache openjdk11 curl tar && mkdir /opt/tomcat && rm /var/cache/apk/*
 
 #Setting JAVA PATH
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk
 ENV PATH=$PATH:$JAVA_HOME/bin
 
 #Tomcat Installation
