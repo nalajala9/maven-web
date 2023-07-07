@@ -16,7 +16,7 @@ RUN curl -O https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.10/bin/apache-tomcat
 RUN tar xvzf apache-tomcat-10.1.10.tar.gz --strip-components 1 --directory /opt/tomcat
 
 #Copy war file to webapps
-COPY sample.war /opt/tomcat/webapps/
+COPY target/*.war /opt/tomcat/webapps/hello.war
 
 EXPOSE 8080
 
