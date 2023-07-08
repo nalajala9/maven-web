@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '3')
+    }
+    tools {
+        maven 'maven-3.9'
+    }
+    stages {
+        stage('Git checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/nalajala9/maven-web.git'
+                sh 'ls -al'
+            }
+        }
+        stage('Compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Code Covergae') {
+            steps {
+                sh 'mvn jacoco:report'
+                jacoco()
+            }
+        }
+        stage('sonarqube') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    sh "mvn sonar:sonar -Dsonar.projectKey=hello -Dsonar.projectName=hello -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml"
+                }
+            }
+        }
+        stage("Quality Gate") {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    script {
+                        def qg = waitForQualityGate abortPipeline: true
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+        stage('dependency-check') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'dp-check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        /*stage('uploading artifacts to nexus') {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'webapp', classifier: '', file: 'target/webapp-0.0.1-SNAPSHOT.war', type: 'war']], credentialsId: 'nexus-token', groupId: 'pipeline-job', nexusUrl: '44.201.216.169:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'learnandcode.in', version: '1.0.0-SNAPSHOT'
+            }
+        }*/
+        stage('deploy to tomcat') {
+            steps {
+                sshagent(['tc-cred']) {
+                    sh 'scp -o StrictHostKeyChecking=no target/*.war ubuntu@ec2-35-174-172-131.compute-1.amazonaws.com:/opt/tomcat/apache-tomcat-10.1.10/webapps/hello.war'
+                }
+            }
+        }
+    }
+    post {
+        success {
+            emailext body: '''Please find the attached build results and click on the URL to see console output
+            $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+            Check console output at $BUILD_URL to view the results.''', subject: 'Attention Required: $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!', to: 'dev.learnandcode@gmail.com'
+        }
+        failure {
+            emailext body: '''Please find the attached build results and click on the URL to see console output
+            $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+            Check console output at $BUILD_URL to view the results.''', subject: 'Attention Required: $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!', to: 'dev.learnandcode@gmail.com'
+       }
+        
+    }
+}
