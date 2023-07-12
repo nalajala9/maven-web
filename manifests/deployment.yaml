@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: welcome
-        image: 20152282/jenkins-welcome-app:1024678:5c6a6ce:1bdc5ab:9f4dd43:a7f960e:ca9fc7d:9fcd8a9:cdd2ef4:548b4ba
+        image: 20152282/jenkins-welcome-app:3c14d75:1024678:5c6a6ce:1bdc5ab:9f4dd43:a7f960e:ca9fc7d:9fcd8a9:cdd2ef4:548b4ba
         ports:
         - containerPort: 8080
 
